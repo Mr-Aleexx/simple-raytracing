@@ -13,7 +13,7 @@
 #define COLOR_GRAY 0xefefefef
 #define COLOR_YELLOW 0xFFFFFF00
 
-#define RAYS_NUMBER 200
+#define RAYS_NUMBER 500
 #define CIRCLE_NUMBER 10
 
 typedef struct {
@@ -179,35 +179,53 @@ int main(void) {
   while (running) {
     while (SDL_PollEvent(&e)) {
       if (e.type == SDL_QUIT) running = 0;
-      if (e.type == SDL_MOUSEMOTION) {
-        int xMotion = e.motion.x;
-        int yMotion = e.motion.y;
+
+      int xMotion = e.motion.x;
+      int yMotion = e.motion.y;
+
+      if (SDL_GetMouseState(&xMotion,&yMotion) & SDL_BUTTON_LMASK) {
+        drag = 1;
+      }
+      if (!SDL_GetMouseState(&xMotion,&yMotion) & SDL_BUTTON_LMASK) {
+        drag= 0;
+      }
+
+      if(e.type == SDL_MOUSEMOTION && drag) {
+        xMotion = e.motion.x;
+        yMotion = e.motion.y;
 
         for (int i = 0 ; i < CIRCLE_NUMBER ; i++) {
-          circles[i].x = xMotion;
-          circles[i].y = yMotion;
+          if (in_circle(&circles[i], xMotion, yMotion)) {
+              circles[i].x = xMotion;
+              circles[i].y = yMotion;
+          }
+          if (in_circle(&BASE_CIRCLE, xMotion, yMotion)) {
+            BASE_CIRCLE.x = xMotion;
+            BASE_CIRCLE.y = yMotion;
+          
+          }
         }
-      }
-    }
+      } 
 
-    SDL_FillRect(surface, &erase_rect, COLOR_BLACK);
-  
-    for (int i = 0 ; i < CIRCLE_NUMBER ; i++) {
-      FillCircle(surface,&circles[i]);
-    }
-
-    generate_rays(&BASE_CIRCLE, rays);
-  
-    for (int i = 0 ; i < CIRCLE_NUMBER ; i++) {
-      check_collision(&circles[i], rays, RAYS_NUMBER);
-    }
+      SDL_FillRect(surface, &erase_rect, COLOR_BLACK);
+      generate_rays(&BASE_CIRCLE, rays);
     
+      for (int i = 0 ; i < CIRCLE_NUMBER ; i++) {
+        FillCircle(surface,&circles[i]);
+      }
 
-    FillRays(surface, rays);
-    SDL_UpdateWindowSurface(window);
-    SDL_Delay(1);
+    
+      for (int i = 0 ; i < CIRCLE_NUMBER ; i++) {
+        check_collision(&circles[i], rays, RAYS_NUMBER);
+      }
+      
+      FillRays(surface, rays);
+      FillCircle(surface, &BASE_CIRCLE);
+
+      SDL_UpdateWindowSurface(window);
+      SDL_Delay(1);
+    }
   }
-
   SDL_DestroyWindow(window);
   SDL_Quit();
   return 0;
