@@ -17,9 +17,9 @@
 #define COLOR_GREEN 0x0000FF00
 #define COLOR_BLUE 0x000000FF
 
-#define RAYS_NUMBER 200
+#define RAYS_NUMBER 1000
 #define CIRCLE_NUMBER 10
-
+#define SHADOW_CIRCLE_NUMBER 1
 typedef struct {
   double x;
   double y;
@@ -31,13 +31,6 @@ typedef struct {
   double x_end, y_end;
   double angle;
 } Ray;
-
-
-Circle BASE_CIRCLE = {
-  .x = WIDTH / 2,
-  .y = HEIGHT / 2,
-  .r = 20,
-};
 
 void FillCircle(SDL_Surface *surface, Circle *circle) {
   double radius_squared =circle->r * circle->r;
@@ -132,6 +125,7 @@ void check_collision(Circle *circle, Ray rays[], int ray_count) {
   }
 }
 
+
 bool in_circle(Circle *circle, int xMotion, int yMotion) {
   int dx = xMotion - circle->x;
   int dy = yMotion - circle->y;
@@ -154,14 +148,15 @@ int main(void) {
 
 
   Circle *circles = malloc(CIRCLE_NUMBER * sizeof(Circle));
+  Circle *shadow_circles = malloc(SHADOW_CIRCLE_NUMBER * sizeof(Circle));
 
   for (int i = 0 ; i < CIRCLE_NUMBER ; i++) {
     rand_circle(&circles[i]);
   }
-
-  for (int i = 0 ; i < CIRCLE_NUMBER ; i++) {
-    print_circle(&circles[i]);
+  for (int i = 0 ; i < SHADOW_CIRCLE_NUMBER ; i++) {
+    rand_circle(&shadow_circles[i]);
   }
+  
   
 
   if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -192,31 +187,36 @@ int main(void) {
       if (SDL_GetMouseState(&xMotion,&yMotion) & SDL_BUTTON_LMASK) {
         drag = 1;
       }
-      if (!SDL_GetMouseState(&xMotion,&yMotion) & SDL_BUTTON_LMASK) {
+      if (!(SDL_GetMouseState(&xMotion,&yMotion) & SDL_BUTTON_LMASK)) {
         drag= 0;
       }
 
       if(e.type == SDL_MOUSEMOTION && drag) {
+        int circle_index;
+        int shadow_circle_index;
+
         xMotion = e.motion.x;
         yMotion = e.motion.y;
 
         for (int i = 0 ; i < CIRCLE_NUMBER ; i++) {
-          if (in_circle(&circles[i], xMotion, yMotion)) {
-              circles[i].x = xMotion;
-              circles[i].y = yMotion;
-          }
-          if (in_circle(&BASE_CIRCLE, xMotion, yMotion)) {
-            BASE_CIRCLE.x = xMotion;
-            BASE_CIRCLE.y = yMotion;
-          
-          }
+          if (in_circle(&circles[i], xMotion, yMotion)) circle_index = i;
         }
-      } 
+        for (int i = 0 ; i < SHADOW_CIRCLE_NUMBER ; i++) {
+          if (in_circle(&shadow_circles[i] , xMotion, yMotion)) shadow_circle_index = i;
+        }
+        circles[circle_index].x = xMotion;
+        circles[circle_index].y = yMotion;
 
+        shadow_circles[shadow_circle_index].x = xMotion;
+        shadow_circles[shadow_circle_index].y = yMotion;
+      } 
+      
     }
       SDL_FillRect(surface, &erase_rect, COLOR_BLACK);
-      generate_rays(&BASE_CIRCLE, rays);
     
+      for (int i = 0 ; i < SHADOW_CIRCLE_NUMBER ; i++) {
+        generate_rays(&shadow_circles[i], rays);
+      }
       for (int i = 0 ; i < CIRCLE_NUMBER ; i++) {
         FillCircle(surface,&circles[i]);
       }
@@ -227,11 +227,14 @@ int main(void) {
       }
       
       FillRays(surface, rays);
-      FillCircle(surface, &BASE_CIRCLE);
 
+      for (int i = 0 ; i < SHADOW_CIRCLE_NUMBER ; i++) {
+        FillCircle(surface, &shadow_circles[i]);
+      }
       SDL_UpdateWindowSurface(window);
       SDL_Delay(1);
   }
+  
   SDL_DestroyWindow(window);
   SDL_Quit();
   return 0;
