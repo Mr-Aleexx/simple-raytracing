@@ -154,23 +154,23 @@ int main(void) {
     Ray *rays = malloc(RAYS_NUMBER * sizeof(Ray));
 
     for (int i = 0 ; i < CIRCLE_NUMBER ; i++) {
-	rand_circle(&circles[i]);
+        rand_circle(&circles[i]);
     }
     for (int i = 0 ; i < SHADOW_CIRCLE_NUMBER ; i++) {
-	rand_circle(&shadow_circles[i]);
-	print_circle(&shadow_circles[i]);
+        rand_circle(&shadow_circles[i]);
+        print_circle(&shadow_circles[i]);
     }
 
 
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-	fprintf(stderr, "SDL_Init error: %s\n", SDL_GetError());
-	return 1;
+        fprintf(stderr, "SDL_Init error: %s\n", SDL_GetError());
+        return 1;
     }
 
     SDL_Window *window =
       SDL_CreateWindow("Raytracing", SDL_WINDOWPOS_CENTERED,
-		       SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+                       SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
 
     SDL_Surface *surface = SDL_GetWindowSurface(window);
 
@@ -188,67 +188,71 @@ int main(void) {
     while (SDL_PollEvent(&e)) {
       if (e.type == SDL_QUIT) running = 0;
 
-      int xMotion = e.motion.x;
-      int yMotion = e.motion.y;
+        int xMotion = e.motion.x;
+        int yMotion = e.motion.y;
 
-      if (SDL_GetMouseState(&xMotion,&yMotion) & SDL_BUTTON_LMASK) {
-	drag = 1;
-      }
-      if (!(SDL_GetMouseState(&xMotion,&yMotion) & SDL_BUTTON_LMASK)) {
-	drag = 0;
-      }
-	
+        if (SDL_GetMouseState(&xMotion,&yMotion) & SDL_BUTTON_LMASK) drag = 1;
+        else {
+            drag = 0;
+            circle_index = -1;
+            shadow_circle_index = -1;
+        }
+
+
+        if (drag && circle_index == -1) {
+            for (int i = 0 ; i < CIRCLE_NUMBER ; i++) {
+                if (in_circle(&circles[i], xMotion, yMotion)) {
+                    circle_index = i;
+                    break;
+                }  else circle_index = -1;
+            }
+        }
+
+        if (drag && shadow_circle_index == -1 ) {
+            for (int i = 0 ; i < SHADOW_CIRCLE_NUMBER ; i++) {
+              if (in_circle(&shadow_circles[i] , xMotion, yMotion)) {
+                  shadow_circle_index = i;
+              } else shadow_circle_index = -1;
+            }
+        }
+
       if(e.type == SDL_MOUSEMOTION && drag) {
 
-	xMotion = e.motion.x;
-	yMotion = e.motion.y;
+        xMotion = e.motion.x;
+        yMotion = e.motion.y;
 
+        if(circle_index != -1) {
+            circles[circle_index].x = xMotion;
+            circles[circle_index].y = yMotion;
+        }
 
-	for (int i = 0 ; i < CIRCLE_NUMBER ; i++) {
-	  if (in_circle(&circles[i], xMotion, yMotion)) {
-	      printf("in circle : %d\n", i);
-		circle_index = i;
-		break;
-	  }  else circle_index = -1;
-	}
-	for (int i = 0 ; i < SHADOW_CIRCLE_NUMBER ; i++) {
-	  if (in_circle(&shadow_circles[i] , xMotion, yMotion)) {
-	      shadow_circle_index = i;
-	  } else shadow_circle_index = -1;
-	}
-	
-	if(circle_index != -1) {
-	    circles[circle_index].x = xMotion;
-	    circles[circle_index].y = yMotion;
-	}
+        if (shadow_circle_index != -1) {
+            shadow_circles[shadow_circle_index].x = xMotion;
+            shadow_circles[shadow_circle_index].y = yMotion;
+        }
+      }
+        //printf("\nSELECTED CIRCLE : %d\n", circle_index);
+        //printf("SELECTED SHADOWCIRCLE : %d\n\n", shadow_circle_index);
 
-	if (shadow_circle_index != -1) {
-	    shadow_circles[shadow_circle_index].x = xMotion;
-	    shadow_circles[shadow_circle_index].y = yMotion;
-	}
-      } 
-	printf("\nSELECTED CIRCLE : %d\n", circle_index);
-	printf("SELECTED SHADOWCIRCLE : %d\n\n", shadow_circle_index);
-      
     }
       SDL_FillRect(surface, &erase_rect, COLOR_BLACK);
 
       for (int i = 0 ; i < SHADOW_CIRCLE_NUMBER ; i++) {
-	generate_rays(&shadow_circles[i], rays);
+        generate_rays(&shadow_circles[i], rays);
       }
       for (int i = 0 ; i < CIRCLE_NUMBER ; i++) {
-	FillCircle(surface,&circles[i]);
+        FillCircle(surface,&circles[i]);
       }
 
 
       for (int i = 0 ; i < CIRCLE_NUMBER ; i++) {
-	check_collision(&circles[i], rays, RAYS_NUMBER);
+        check_collision(&circles[i], rays, RAYS_NUMBER);
       }
-      
+
       FillRays(surface, rays);
 
       for (int i = 0 ; i < SHADOW_CIRCLE_NUMBER ; i++) {
-	FillCircle(surface, &shadow_circles[i]);
+        FillCircle(surface, &shadow_circles[i]);
       }
       SDL_UpdateWindowSurface(window);
       SDL_Delay(1);
