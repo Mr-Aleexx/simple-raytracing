@@ -21,7 +21,7 @@
 
 #define RAYS_NUMBER 1000
 #define CIRCLE_NUMBER 10
-#define SHADOW_CIRCLE_NUMBER 2
+#define SHADOW_CIRCLE_NUMBER 1
 typedef struct {
     double x;
     double y;
@@ -86,12 +86,13 @@ void FillRays(SDL_Surface *surface, Ray rays[RAYS_NUMBER]) {
 }
 
 void generate_rays(Circle *circle, Ray rays[RAYS_NUMBER]) {
+    double hypo = hypot(WIDTH, HEIGHT);
     for (int i = 0; i < RAYS_NUMBER; i++) {
 	double ang = ((double)i / RAYS_NUMBER) * 2 * M_PI;
 	rays[i].x_start = circle->x;
 	rays[i].y_start = circle->y;
-	rays[i].x_end = (int)(rays[i].x_start + cos(ang) * 2000);
-	rays[i].y_end = (int)(rays[i].y_start + sin(ang) * 2000);
+	rays[i].x_end = (int)(rays[i].x_start + cos(ang) * (hypo - circle->r));
+	rays[i].y_end = (int)(rays[i].y_start + sin(ang) * (hypo - circle->r));
 	rays[i].angle = ang;
     }
 }
@@ -247,7 +248,7 @@ int main(void) {
 		circle_index = -1;
 	    }
 
-	    printf("sc_index : %d, c_index : %d\n", shadow_circle_index, circle_index);
+	    //printf("sc_index : %d, c_index : %d\n", shadow_circle_index, circle_index);
 
 	}
 	SDL_FillRect(surface, &erase_rect, COLOR_BLACK);
@@ -272,6 +273,8 @@ int main(void) {
 	SDL_Delay(1);
     }
 
+    free(circles);
+    free(shadow_circles);
     SDL_DestroyWindow(window);
     SDL_Quit();
     return 0;
