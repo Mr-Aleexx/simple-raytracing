@@ -2,14 +2,14 @@ CC = gcc
 CFLAGS = -Wall -Wextra 
 DEBUG_CFLAGS = -DDEBUG -g -O0 -fsanitize=address
 
-LFLAGS = -lSDL2 -lm 
+LFLAGS = -lSDL2 -lm
 
 all: run
 
-run: simple_raytracing
-	 ./raytracing
+run: clock
+	./raytracing
 
-simple_raytracing: 
+clock: 
 	$(CC) -o raytracing raytracing.c $(CFLAGS) $(LFLAGS)
 
 debug:
